@@ -1,0 +1,71 @@
+pipeline
+{
+    agent any
+    stages
+    {
+        stage('ContinuousDownload')
+        {
+            steps
+            {
+                script
+                {
+                    try
+                    {
+                        git 'https://github.com/chebrolunagababu/Maven.git'
+                    }
+                    catch(Exception ex){ exit(1);}
+                }
+            }
+        }
+         stage('ContinuousBuild')
+        {
+            steps
+            {
+                script
+                {
+                    try
+                    {
+                        sh label:'',script:'mvn package'
+                    }
+                    catch(Exception ex){ exit(1);}
+                }
+            }
+        }
+        stage('ContinuousDeployment')
+        {
+            steps
+            {
+                script
+                {
+                    try
+                    {
+                        sh label:'',script:'scp "/home/ubuntu/.jenkins/workspace/DeclarativePipeline/webapp/target/webapp.war" "ubuntu@ip-172-31-38-158:/var/lib/tomcat8/webapps/testApp.war"'
+                    }
+                    catch(Exception ex){ exit(1);}
+                }
+            }
+        }
+        stage('ContinuousTesting')
+        {
+            steps
+            {
+                script
+                {
+                    try
+                    {
+                        git 'https://github.com/chebrolunagababu/FunctionalTesting.git'
+                        sh label:'',script:'java -jar /home/ubuntu/.jenkins/workspace/DeclarativePipeline/testing.jar'
+                    }
+                    catch(Exception ex){exit(1);}
+                }
+            }
+        }
+    }
+     post
+        {
+            success
+            {
+                sh label:'',script:'scp "/home/ubuntu/.jenkins/workspace/DeclarativePipeline/webapp/target/webapp.war" "ubuntu@ip-172-31-42-108:/var/lib/tomcat8/webapps/prodApp.war"'
+            }
+        }
+}
